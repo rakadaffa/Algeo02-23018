@@ -95,7 +95,7 @@ Pastikan anda sudah memiliki:
 5. **Install requirements.txt**
 
 ```bash
-  npm install -r requirements.txt
+  pip install -r requirements.txt
 ```
 
 6. **Ubah Intepreter Python dengan yang ada di dalam env**
