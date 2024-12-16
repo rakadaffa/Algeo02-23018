@@ -1,0 +1,23 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model DatasetPicture {
+  id   Int    @id @default(autoincrement())
+  name String
+}
+
+model DatasetMidi {
+  id   Int    @id @default(autoincrement())
+  name String
+}
+
+model Mapper {
+  id   Int    @id @default(autoincrement())
+  name String
+}
