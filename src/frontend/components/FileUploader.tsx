@@ -60,6 +60,7 @@ const FileUploader: React.FC<ModeProps> = ({ all, image, music }) => {
       title: response.data.message,
       variant: "default",
     });
+    window.location.reload();
   };
 
   // Save dataset or mapper to the database
@@ -79,6 +80,7 @@ const FileUploader: React.FC<ModeProps> = ({ all, image, music }) => {
       title: response.data.message,
       variant: "default",
     });
+    window.location.reload();
   };
 
   // Handle Dropzone Uploads
@@ -111,6 +113,7 @@ const FileUploader: React.FC<ModeProps> = ({ all, image, music }) => {
         datasetFolder: response.data.dataset_folder,
       });
       await saveToDatabase(type, response.data.dataset_folder);
+      window.location.reload();
     } catch (error) {
       setUploadStatus({
         isUploading: false,
@@ -153,6 +156,7 @@ const FileUploader: React.FC<ModeProps> = ({ all, image, music }) => {
         description: correctFilename,
         variant: "default",
       });
+      window.location.reload();
     } catch (error) {
       console.error("Error uploading mapper:", error);
       toast({
