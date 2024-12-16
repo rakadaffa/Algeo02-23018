@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import { useDropzone } from "react-dropzone";
 import axios from "axios";
 import { Upload } from "lucide-react";
+import { useToast } from "@/hooks/use-toast";
 
 interface UploadStatus {
   isUploading: boolean;
@@ -17,6 +18,7 @@ interface ModeProps {
 }
 
 const FileUploader: React.FC<ModeProps> = ({ all, image, music }) => {
+  const { toast } = useToast();
   const [uploadStatusA, setUploadStatusA] = useState<UploadStatus>({
     isUploading: false,
     success: false,
@@ -54,7 +56,10 @@ const FileUploader: React.FC<ModeProps> = ({ all, image, music }) => {
     if (type === "image") setImageDataset(null);
     if (type === "music") setMusicDataset(null);
     if (type === "mapper") setMapperName(null);
-    alert(response.data.message);
+    toast({
+      title: response.data.message,
+      variant: "default",
+    });
   };
 
   // Save dataset or mapper to the database
@@ -70,7 +75,10 @@ const FileUploader: React.FC<ModeProps> = ({ all, image, music }) => {
       type,
       name: formattedName,
     });
-    alert(response.data.message);
+    toast({
+      title: response.data.message,
+      variant: "default",
+    });
   };
 
   // Handle Dropzone Uploads
@@ -140,11 +148,17 @@ const FileUploader: React.FC<ModeProps> = ({ all, image, music }) => {
 
       // Save to the database
       await saveToDatabase("mapper", correctFilename);
-
-      alert(`Mapper uploaded successfully: ${correctFilename}`);
+      toast({
+        title: "Mapper uploaded successfully!",
+        description: correctFilename,
+        variant: "default",
+      });
     } catch (error) {
       console.error("Error uploading mapper:", error);
-      alert("Failed to upload mapper.");
+      toast({
+        title: "Failed to upload mapper!",
+        variant: "destructive",
+      });
     }
   };
 

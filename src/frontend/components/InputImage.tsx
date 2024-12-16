@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState } from "react";
+import { useToast } from "@/hooks/use-toast";
 
 interface InputFormProps {
   onResults: (results: any[]) => void;
@@ -11,6 +12,7 @@ const InputForm: React.FC<InputFormProps> = ({
   onResults,
   onExecutionTime,
 }) => {
+  const { toast } = useToast();
   const [selectedImage, setSelectedImage] = useState<File | null>(null);
   const [preview, setPreview] = useState<string | null>(null);
   const [datasetPictureName, setDatasetPictureName] = useState<string | null>(
@@ -47,7 +49,10 @@ const InputForm: React.FC<InputFormProps> = ({
 
   const handleSubmit = async () => {
     if (!selectedImage || !datasetPictureName) {
-      alert("Please select an image and ensure dataset is available.");
+      toast({
+        title: "Please select an image or make sure dataset is available!",
+        variant: "destructive",
+      });
       return;
     }
 
@@ -77,7 +82,10 @@ const InputForm: React.FC<InputFormProps> = ({
       onExecutionTime(data.execution_time);
     } catch (error) {
       console.error("Error processing image:", error);
-      alert("Error processing image.");
+      toast({
+        title: "Error processing image!",
+        variant: "destructive",
+      });
     }
   };
 

@@ -10,8 +10,11 @@
   },
   "dependencies": {
     "@prisma/client": "^6.0.1",
+    "@radix-ui/react-toast": "^1.2.3",
     "@tonejs/midi": "^2.0.28",
     "axios": "^1.7.8",
+    "class-variance-authority": "^0.7.1",
+    "clsx": "^2.1.1",
     "howler": "^2.2.4",
     "lucide-react": "^0.468.0",
     "midi-writer-js": "^3.1.1",
@@ -21,6 +24,8 @@
     "react-dom": "19.0.0-rc-66855b96-20241106",
     "react-dropzone": "^14.3.5",
     "recordrtc": "^5.6.2",
+    "tailwind-merge": "^2.5.5",
+    "tailwindcss-animate": "^1.0.7",
     "tone": "^15.0.4",
     "uuid": "^11.0.3"
   },

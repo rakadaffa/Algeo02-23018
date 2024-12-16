@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState } from "react";
+import { useToast } from "@/hooks/use-toast";
 
 interface MidiFormProps {
   onResults: (results: any[]) => void;
@@ -8,6 +9,7 @@ interface MidiFormProps {
 }
 
 const MidiForm: React.FC<MidiFormProps> = ({ onResults, onExecutionTime }) => {
+  const { toast } = useToast();
   const [selectedMidi, setSelectedMidi] = useState<File | null>(null);
   const [datasetMidiName, setDatasetMidiName] = useState<string | null>(null);
   const [mapperName, setMapperName] = useState<string | null>(null);
@@ -34,7 +36,10 @@ const MidiForm: React.FC<MidiFormProps> = ({ onResults, onExecutionTime }) => {
 
   const handleSubmit = async () => {
     if (!selectedMidi || !datasetMidiName) {
-      alert("Please select a MIDI file and ensure dataset is available.");
+      toast({
+        title: "Please select a music or make sure dataset is available!",
+        variant: "destructive",
+      });
       return;
     }
 
@@ -61,7 +66,10 @@ const MidiForm: React.FC<MidiFormProps> = ({ onResults, onExecutionTime }) => {
       onExecutionTime(data.execution_time);
     } catch (error) {
       console.error("Error processing MIDI file:", error);
-      alert("Error processing MIDI file.");
+      toast({
+        title: "Error processing MIDI file!",
+        variant: "destructive",
+      });
     }
   };
 
