@@ -23,8 +23,10 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" className={montserrat.variable}>
-      <body className="antialiased">{children}</body>
-      <Toaster />
+      <body className="antialiased">
+        {children}
+        <Toaster />
+      </body>
     </html>
   );
 }
