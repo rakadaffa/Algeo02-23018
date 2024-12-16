@@ -15,6 +15,7 @@ import Icon from "@/public/icon.png";
 import FastIcon from "@/public/lightning.svg";
 import PreciseIcon from "@/public/accurate.svg";
 import Link from "next/link";
+import { useToast } from "@/hooks/use-toast";
 
 interface UploadStatus {
   isUploading: boolean;
@@ -27,7 +28,7 @@ const FileUploader: React.FC = () => {
   const [selectedTab, setSelectedTab] = useState<"all" | "image" | "music">(
     "all"
   );
-
+  const { toast } = useToast();
   // Function to render the current page based on the selected tab
   const renderPage = () => {
     if (selectedTab === "all") return <AllPage />;
@@ -77,7 +78,10 @@ const FileUploader: React.FC = () => {
     if (type === "image") setImageDataset(null);
     if (type === "music") setMusicDataset(null);
     if (type === "mapper") setMapperName(null);
-    alert(response.data.message);
+    toast({
+      title: response.data.message,
+      variant: "default",
+    });
   };
 
   // Save dataset or mapper to the database
@@ -93,7 +97,10 @@ const FileUploader: React.FC = () => {
       type,
       name: formattedName,
     });
-    alert(response.data.message);
+    toast({
+      title: response.data.message,
+      variant: "default",
+    });
   };
 
   // Handle Dropzone Uploads
@@ -102,42 +109,30 @@ const FileUploader: React.FC = () => {
     setUploadStatus: React.Dispatch<React.SetStateAction<UploadStatus>>,
     type: "image" | "music"
   ) => {
-    const CHUNK_SIZE = 100; // Number of files per batch
     setUploadStatus({
       isUploading: true,
       success: false,
       error: null,
       datasetFolder: null,
     });
+    const formData = new FormData();
+    acceptedFiles.forEach((file) => formData.append("files", file));
 
     try {
-      // Split the files into chunks
-      for (let i = 0; i < acceptedFiles.length; i += CHUNK_SIZE) {
-        const chunk = acceptedFiles.slice(i, i + CHUNK_SIZE); // Get a chunk of files
-        const formData = new FormData();
-
-        chunk.forEach((file) => formData.append("files", file));
-
-        // Upload the chunk
-        const response = await axios.post(
-          "http://127.0.0.1:8000/upload-folder/",
-          formData,
-          {
-            headers: { "Content-Type": "multipart/form-data" },
-          }
-        );
-
-        if (i + CHUNK_SIZE >= acceptedFiles.length) {
-          // Save dataset folder for the last chunk
-          await saveToDatabase(type, response.data.dataset_folder);
-          setUploadStatus({
-            isUploading: false,
-            success: true,
-            error: null,
-            datasetFolder: response.data.dataset_folder,
-          });
+      const response = await axios.post(
+        "http://127.0.0.1:8000/upload-folder/",
+        formData,
+        {
+          headers: { "Content-Type": "multipart/form-data" },
         }
-      }
+      );
+      setUploadStatus({
+        isUploading: false,
+        success: true,
+        error: null,
+        datasetFolder: response.data.dataset_folder,
+      });
+      await saveToDatabase(type, response.data.dataset_folder);
     } catch (error) {
       setUploadStatus({
         isUploading: false,
@@ -145,7 +140,6 @@ const FileUploader: React.FC = () => {
         error: "Upload failed",
         datasetFolder: null,
       });
-      console.error("Error during chunk upload:", error);
     }
   };
 
@@ -176,11 +170,17 @@ const FileUploader: React.FC = () => {
 
       // Save to the database
       await saveToDatabase("mapper", correctFilename);
-
-      alert(`Mapper uploaded successfully: ${correctFilename}`);
+      toast({
+        title: "Mapper uploaded succesfully",
+        description: correctFilename,
+        variant: "default",
+      });
     } catch (error) {
       console.error("Error uploading mapper:", error);
-      alert("Failed to upload mapper.");
+      toast({
+        title: "Failed to upload mapper",
+        variant: "destructive",
+      });
     }
   };
 
