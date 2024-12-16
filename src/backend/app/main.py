@@ -582,8 +582,8 @@ async def find_similar_midi(
         return JSONResponse(content={"error": "Dataset folder not found"}, status_code=400)
 
     midi_files = load_midi_files(dataset_path)
-    window_size_beats = 40
-    step_size_beats = 8
+    window_size_beats = 20
+    step_size_beats = 4
 
     dataset_features = process_dataset_final(midi_files, window_size_beats, step_size_beats)
 
