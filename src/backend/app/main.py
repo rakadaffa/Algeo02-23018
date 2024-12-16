@@ -311,7 +311,6 @@ async def list_picture_files(folder: str):
         if f.suffix.lower() in [".png", ".jpg", ".jpeg"]
     ]
     return {"files": picture_files}
-
 # 1. Preprocessing
 def preprocess_image(img, image_size=(50, 50)):
     img = cv2.equalizeHist(img)
@@ -324,16 +323,17 @@ def preprocess_images(folder_path, image_size=(50, 50)):
     for filename in os.listdir(folder_path):
         if os.path.splitext(filename.lower())[1] in valid_extensions:
             img_path = os.path.join(folder_path, filename)
-            img_color = cv2.imread(img_path, cv2.IMREAD_COLOR)
-            if img_color is None:
-                continue
-            img_gray = cv2.cvtColor(img_color, cv2.COLOR_BGR2GRAY)
-            if img_gray is not None:
+            try:             
+                img_color = cv2.imread(img_path, cv2.IMREAD_COLOR)
+                img_gray = cv2.cvtColor(img_color, cv2.COLOR_BGR2GRAY)
                 original_images_color.append(cv2.cvtColor(img_color, cv2.COLOR_BGR2RGB))
                 img_preprocessed = preprocess_image(img_gray, image_size)
                 images.append(img_preprocessed.flatten())
                 filenames.append(filename)
                 processed_images.append(img_preprocessed)
+            except Exception as E:
+                continue
+
     return np.array(images), filenames, processed_images, original_images_color
 
 # 2. Data Centering
@@ -343,13 +343,23 @@ def standardize_images(image_matrix):
     standardized_matrix = (image_matrix - mean_vector) / (std_vector + 1e-10)
     return standardized_matrix, mean_vector, std_vector
 
-# 3. PCA and SVD
-def compute_pca_with_svd(data, Vt, n_components):
-    eigenfaces = Vt[:n_components].T
-    projections = np.dot(data, eigenfaces)
-    return eigenfaces, projections
+# 3. Explained Variance
+def plot_explained_variance_with_svd(eigenValue, eigenValueSum):
+    explained_variance = eigenValue / eigenValueSum
+    cumulative_variance = np.cumsum(explained_variance)
+    n_components = np.argmax(cumulative_variance >= 0.95) + 1
+    
+    return cumulative_variance, n_components
 
-# 4. Similarity Computation
+# 4. Compute PCA
+def compute_pca_with_svd(standardized_matrix, U, n_components):
+    Uk = U[:n_components].T
+    projections = np.dot(standardized_matrix, Uk)
+    
+    return Uk, projections
+   
+
+# 5. Similarity Computation
 def calculate_euclidean_distance(query_projection, dataset_projections):
     distances = np.sqrt(np.sum((query_projection - dataset_projections)**2, axis=1))
     mean_distance = np.mean(distances) + 1e-10
@@ -369,33 +379,36 @@ async def find_similar_images(
     if not dataset_path.is_dir():
         return JSONResponse(content={"error": "Dataset folder not found"}, status_code=400)
 
-    image_matrix, filenames, processed_images, original_images_color = preprocess_images(str(dataset_path))
-    standardized_matrix, mean_vector, std_vector = standardize_images(image_matrix)
-
-    # Perform SVD
-    U, S, Vt = np.linalg.svd(standardized_matrix)
-    S_squared_sum = np.sum(S**2)
-
-    # Determine number of components for 95% variance
-    explained_variance = (S**2) / S_squared_sum
-    cumulative_variance = np.cumsum(explained_variance)
-    n_components = np.argmax(cumulative_variance >= 0.95) + 1
-
-    # Perform PCA
-    eigenfaces, projections = compute_pca_with_svd(standardized_matrix, Vt, n_components)
-
-    # Process query image
+    # Load and preprocess query image
     query_image = await query_file.read()
     query_array = np.frombuffer(query_image, np.uint8)
     query_img = cv2.imdecode(query_array, cv2.IMREAD_COLOR)
     query_image_gray = cv2.cvtColor(query_img, cv2.COLOR_BGR2GRAY)
     query_preprocessed = preprocess_image(query_image_gray, (50, 50))
     query_flattened = query_preprocessed.flatten()
+    
+    # Preprocess dataset images
+    image_matrix, filenames, processed_images, original_images_color = preprocess_images(str(dataset_path))
+
+    # Standardize images
+    standardized_matrix, mean_vector, std_vector = standardize_images(image_matrix)
     query_standardized = (query_flattened - mean_vector) / (std_vector + 1e-10)
-    query_projection = np.dot(query_standardized, eigenfaces)
+
+    # Compute covariance matrix and perform SVD
+    covariance_matrix = np.cov(standardized_matrix.T)
+    U, S, Ut = np.linalg.svd(covariance_matrix)
+    eigenValue = S
+    eigenValueSum = np.sum(eigenValue)
+
+    # Determine number of components for 95% variance
+    cumulative_variance, n_components = plot_explained_variance_with_svd(eigenValue, eigenValueSum)
+
+    # Perform PCA
+    Uk, dataset_projections = compute_pca_with_svd(standardized_matrix, U, n_components)
+    query_projection = np.dot(query_standardized, Uk)
 
     # Calculate similarities
-    similarities, distances = calculate_euclidean_distance(query_projection, projections)
+    similarities, distances = calculate_euclidean_distance(query_projection, dataset_projections)
     results = [
         {"filename": filename, "similarity": float(similarity)}
         for filename, similarity in zip(filenames, similarities)
@@ -434,7 +447,6 @@ async def find_similar_images(
             "execution_time": end_time - start_time
         }
     )
-
 
 # Helper functions
 def load_midi_files(directory):
